@@ -1,0 +1,29 @@
+{
+  "name": "dev-community_backend",
+  "version": "1.0.0",
+  "description": "개발자 커뮤니티 프로젝트 백엔드 with node.js",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devRyan9025/dev_community.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/devRyan9025/dev_community/issues"
+  },
+  "homepage": "https://github.com/devRyan9025/dev_community#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "mysql2": "^3.14.0",
+    "passport": "^0.7.0",
+    "sequelize": "^6.37.6"
+  }
+}
