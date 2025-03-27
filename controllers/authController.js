@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const { User } = require('../models');
+const jwt = require('jsonwebtoken');
 
 // 회원가입 처리 - Register
 exports.register = async (req, res) => {
@@ -48,36 +49,24 @@ exports.register = async (req, res) => {
   }
 };
 
-// 로그인 처리 - Login
-exports.login = async (req, res, next) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await User.findOne({ where: { email } });
-
-    // 이메일 또는 비밀번호 미 입력시 Fail
-    if (!user || !user.password) {
-      return res.status(401).json({
-        result: 'fail',
-        message: '이메일 또는 비밀번호가 올바르지 않습니다.',
-      });
+// 로그인
+exports.login = (req, res, next) => {
+  passport.authenticate('local', { session: false }, (err, user, info) => {
+    if (err || !user) {
+      return res
+        .status(401)
+        .json({ result: 'fail', message: info?.message || '인증 실패' });
     }
 
-    // 비밀번호가 DB에 있는 값과 다를 때 Fail
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({
-        result: 'fail',
-        message: '잘못된 비밀번호입니다. 재입력해주세요!',
-      });
-    }
-
-    req.login(user, (err) => {
-      if (err) return next(err);
-      // 로그인 성공시 Success
-      return res.json({ result: 'success', message: '로그인 성공' });
+    // JWT 토큰 생성
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
     });
-  } catch (err) {
-    res.status(500).json({ result: 'fail', error: err.message });
-  }
+
+    res.json({
+      result: 'success',
+      message: '로그인 성공',
+      token,
+    });
+  })(req, res, next);
 };

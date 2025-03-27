@@ -1,12 +1,13 @@
 // .env 파일에 저장된 환경변수들을 불러올 수 있게 해줌.
 require('dotenv').config();
+require('./config/passport');
 
 const express = require('express'); // 서버를 만들기 위한 프레임워크
 const session = require('express-session'); // 사용자 세션을 관리하기 위한 미들웨어
 const passport = require('passport'); // 인증 처리를 위한 미들웨어
 const db = require('./models'); // MYSQL 등 DB와 연결해주는 ORM(Object-Relational Mapping)
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/getAllUsers');
+const authRoutes = require('./routes/AuthRouter');
+const userRoutes = require('./routes/UserRouter');
 
 const app = express(); // Express 앱 초기화
 
@@ -18,7 +19,7 @@ app.use(
   session({
     secret: process.env.SESSION_SECRET, // 쿠키 암호화에 사용
     resave: false, // 매 요청마다 세션을 저장하지 않음
-    saveUnintialized: true, // 초기 세션 저장
+    saveUninitialized: true, // 초기 세션 저장
   })
 );
 
@@ -28,11 +29,16 @@ app.use(passport.session()); // 세션 기반 인증 기능 활성화
 
 // 라우팅
 app.use('/auth', authRoutes);
-app.use('/getAllUsers', userRoutes);
+app.use('/user', userRoutes);
 
 // DB 연결 및 서버 실행
-db.sequelize.sync().then(() => {
-  app.listen(3000, () => {
-    console.log('서버 실행 중: http://localhost:3000');
+db.sequelize
+  .sync()
+  .then(() => {
+    app.listen(3000, () => {
+      console.log('서버 실행 중: http://localhost:3000');
+    });
+  })
+  .catch((err) => {
+    console.error('DB 연결 실패', err);
   });
-});

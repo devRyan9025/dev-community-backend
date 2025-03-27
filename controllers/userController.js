@@ -24,3 +24,16 @@ exports.getAllUsers = async (req, res) => {
       .json({ result: 'fail', message: '서버 오류: 유저 조회 실패' });
   }
 };
+
+exports.getCurrentUser = (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({
+      result: 'fail',
+      message: '인증되지 않았습니다. 로그인 후 이용해주세요.',
+    });
+  }
+
+  const { id, name, email } = req.user;
+
+  res.json({ result: 'success', data: { id, name, email } });
+};
