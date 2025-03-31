@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const { User } = require('../models');
 const jwt = require('jsonwebtoken');
+const passport = require('passport');
 
 // 회원가입 처리 - Register
 exports.register = async (req, res) => {
