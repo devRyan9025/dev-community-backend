@@ -2,13 +2,21 @@ const express = require('express');
 const multer = require('multer');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
-const { register } = require('../controllers/authController');
+const {
+  register,
+  requestEmailVerification,
+  verifyEmailToken,
+} = require('../controllers/authController');
 
 const authRouter = express.Router();
 const upload = multer(); // multipart/form-data 처리용
 
 // ✅ 회원가입은 기존처럼 컨트롤러 사용
 authRouter.post('/register', upload.none(), register);
+
+// 회원가입 시, 이메일 인증
+authRouter.get('/verify-email', verifyEmailToken);
+authRouter.post('/request-email-verification', requestEmailVerification);
 
 // ✅ JWT 기반 로그인
 authRouter.post(

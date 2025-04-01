@@ -2,6 +2,56 @@ const bcrypt = require('bcrypt');
 const { User } = require('../models');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const sendVerificationEmail = require('../utils/sendVerificationEmail');
+
+// 회원가입 시, 이메일 인증 절차
+exports.requestEmailVerification = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // 빈 칸 제출 시
+    if (!email) {
+      return res.status(400).json({ message: '이메일을 입력해주세요.' });
+    }
+
+    // 이미 가입된 이메일 입력 시
+    const exists = await User.findOne({ where: { email } });
+    if (exists) {
+      return res.status(400).json({ message: '이미 가입된 이메일입니다.' });
+    }
+
+    const token = jwt.sign({ email }, process.env.JWT_EMAIL_SECRET, {
+      expiresIn: '10m',
+    });
+
+    const link = `${process.env.BASE_URL}/auth/verify-email?token=${token}`;
+    await sendVerificationEmail(email, link);
+
+    return res.json({ message: '이메일로 인증 링크를 전송했습니다.' });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: '이메일 전송 실패' });
+  }
+};
+
+// 이메일 링크 클릭 → 클라이언트로 리다이렉트
+exports.verifyEmailToken = async (req, res) => {
+  const { token } = req.query;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_EMAIL_SECRET);
+    const email = decoded.email;
+
+    // 인증 성공 → 회원가입 페이지로 이동
+    return res.redirect(
+      `${
+        process.env.FRONT_URL
+      }/register?verified=true&email=${encodeURIComponent(email)}`
+    );
+  } catch (err) {
+    return res.redirect(`${process.env.FRONT_URL}/register?verified=false`);
+  }
+};
 
 // 회원가입 처리 - Register
 exports.register = async (req, res) => {
@@ -31,6 +81,7 @@ exports.register = async (req, res) => {
       name,
       email,
       password: hashed,
+      isVerified: true,
     });
 
     const { id, name: newName, email: newEmail } = newUser;
