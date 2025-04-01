@@ -25,7 +25,6 @@ app.use(
 
 // Passport를 Express에 연결
 app.use(passport.initialize()); // Passport 초기화
-app.use(passport.session()); // 세션 기반 인증 기능 활성화
 
 // 라우팅
 app.use('/auth', authRoutes);
