@@ -25,6 +25,7 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+// 로그인한 사용자 정보
 exports.getCurrentUser = (req, res) => {
   const user = req.user;
 
@@ -36,4 +37,31 @@ exports.getCurrentUser = (req, res) => {
   }
 
   res.json({ result: 'success', user: user });
+};
+
+// 프로필 이미지 업로드
+exports.uploadProfileImage = async (req, res) => {
+  const userId = req.params.id;
+  const file = req.file;
+
+  if (!file) {
+    return res
+      .status(400)
+      .json({ result: 'fail', message: '파일이 첨부되지 않았습니다.' });
+  }
+
+  try {
+    const transFilename = file.filename; // 전체 경로가 아닌 파일명만 저장
+
+    // DB 업데이트 (선택)
+    await User.update(
+      { profileImage: transFilename },
+      { where: { id: userId } }
+    );
+
+    res.json({ result: 'success', profileImage: transFilename });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ result: 'fail', message: '프로필 업로드 실패' });
+  }
 };

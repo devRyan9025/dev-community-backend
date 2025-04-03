@@ -6,6 +6,7 @@ const express = require('express'); // 서버를 만들기 위한 프레임워�
 const session = require('express-session'); // 사용자 세션을 관리하기 위한 미들웨어
 const passport = require('passport'); // 인증 처리를 위한 미들웨어
 const db = require('./models'); // MYSQL 등 DB와 연결해주는 ORM(Object-Relational Mapping)
+const path = require('path');
 const authRoutes = require('./routes/AuthRouter');
 const userRoutes = require('./routes/UserRouter');
 
@@ -29,6 +30,7 @@ app.use(passport.initialize()); // Passport 초기화
 // 라우팅
 app.use('/auth', authRoutes);
 app.use('/user', userRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // DB 연결 및 서버 실행
 db.sequelize

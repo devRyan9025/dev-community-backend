@@ -41,6 +41,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      profileImage: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       freezeTableName: true, // 테이블명 복수화 방지
