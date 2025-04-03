@@ -2,6 +2,8 @@ const bcrypt = require('bcrypt');
 const { User } = require('../models');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
+const { validationResult } = require('express-validator');
+
 const sendVerificationEmail = require('../utils/sendVerificationEmail');
 
 /* 회원가입 시, 이메일 인증 절차 */
@@ -56,6 +58,15 @@ exports.verifyEmailToken = async (req, res) => {
 
 // 회원가입 처리 - Register
 exports.register = async (req, res) => {
+  // 유효성 검사 추가 (express-validator 사용)
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      result: 'fail',
+      message: errors.array()[0].msg,
+    });
+  }
+
   const {
     name,
     email,
@@ -69,15 +80,6 @@ exports.register = async (req, res) => {
   } = req.body;
 
   try {
-    // 필수 입력사항 미 입력시 Fail
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        result: 'fail',
-        message:
-          '필수 입력값이 누락되었습니다. 이름, 이메일, 비밀번호를 모두 입력해주세요.',
-      });
-    }
-
     // 중복된 이메일로 가입시 Fail
     const exists = await User.findOne({ where: { email } });
     if (exists) {
@@ -101,31 +103,19 @@ exports.register = async (req, res) => {
       isVerified: true,
     });
 
-    const {
-      id,
-      name: newName,
-      email: newEmail,
-      company: newCompany,
-      position: newPosition,
-      phone: newPhone,
-      postcode: newPostcode,
-      address: newAddress,
-      detailAddress: newDetailAddress,
-    } = newUser;
-
     // 회원가입 성공시 Success
     res.status(201).json({
       result: 'success',
       user: {
-        id,
-        name: newName,
-        email: newEmail,
-        company: newCompany,
-        position: newPosition,
-        phone: newPhone,
-        postcode: newPostcode,
-        address: newAddress,
-        detailAddress: newDetailAddress,
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        company: newUser.company,
+        position: newUser.position,
+        phone: newUser.phone,
+        postcode: newUser.postcode,
+        address: newUser.address,
+        detailAddress: newUser.detailAddress,
       },
     });
   } catch (err) {
