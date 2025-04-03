@@ -26,14 +26,14 @@ exports.getAllUsers = async (req, res) => {
 };
 
 exports.getCurrentUser = (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({
+  const user = req.user;
+
+  if (!user) {
+    return res.status(404).json({
       result: 'fail',
-      message: '인증되지 않았습니다. 로그인 후 이용해주세요.',
+      message: '사용자 정보를 찾을 수 없습니다.',
     });
   }
 
-  const { id, name, email } = req.user;
-
-  res.json({ result: 'success', data: { id, name, email } });
+  res.json({ result: 'success', user: user });
 };

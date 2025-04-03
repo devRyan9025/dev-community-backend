@@ -19,6 +19,24 @@ module.exports = (sequelize, DataTypes) => {
       name: {
         type: DataTypes.STRING,
       },
+      company: {
+        type: DataTypes.STRING,
+      },
+      position: {
+        type: DataTypes.STRING,
+      },
+      phone: {
+        type: DataTypes.STRING,
+      },
+      postcode: {
+        type: DataTypes.INTEGER,
+      },
+      address: {
+        type: DataTypes.STRING,
+      },
+      detailAddress: {
+        type: DataTypes.STRING,
+      },
       isVerified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,

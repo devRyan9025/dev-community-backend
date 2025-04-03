@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const sendVerificationEmail = require('../utils/sendVerificationEmail');
 
-// 회원가입 시, 이메일 인증 절차
+/* 회원가입 시, 이메일 인증 절차 */
 exports.requestEmailVerification = async (req, res) => {
   const { email } = req.body;
 
@@ -24,7 +24,9 @@ exports.requestEmailVerification = async (req, res) => {
       expiresIn: '10m',
     });
 
-    const link = `${process.env.BASE_URL}/auth/verify-email?token=${token}`;
+    const link = `${
+      process.env.FRONT_URL
+    }/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
     await sendVerificationEmail(email, link);
 
     return res.json({ message: '이메일로 인증 링크를 전송했습니다.' });
@@ -34,28 +36,37 @@ exports.requestEmailVerification = async (req, res) => {
   }
 };
 
-// 이메일 링크 클릭 → 클라이언트로 리다이렉트
+/* 이메일 링크 클릭 → 클라이언트로 리다이렉트 */
 exports.verifyEmailToken = async (req, res) => {
-  const { token } = req.query;
+  const { token } = req.body;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_EMAIL_SECRET);
     const email = decoded.email;
 
-    // 인증 성공 → 회원가입 페이지로 이동
-    return res.redirect(
-      `${
-        process.env.FRONT_URL
-      }/register?verified=true&email=${encodeURIComponent(email)}`
-    );
+    // 토큰이 유효하니, 프론트로 응답
+    return res.json({ result: 'success', email });
   } catch (err) {
-    return res.redirect(`${process.env.FRONT_URL}/register?verified=false`);
+    console.log(err.response?.data);
+    return res
+      .status(400)
+      .json({ result: 'fail', message: '유효하지 않은 토큰입니다.' });
   }
 };
 
 // 회원가입 처리 - Register
 exports.register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const {
+    name,
+    email,
+    password,
+    company,
+    position,
+    phone,
+    postcode,
+    address,
+    detailAddress,
+  } = req.body;
 
   try {
     // 필수 입력사항 미 입력시 Fail
@@ -81,18 +92,40 @@ exports.register = async (req, res) => {
       name,
       email,
       password: hashed,
+      company,
+      position,
+      phone,
+      postcode,
+      address,
+      detailAddress,
       isVerified: true,
     });
 
-    const { id, name: newName, email: newEmail } = newUser;
+    const {
+      id,
+      name: newName,
+      email: newEmail,
+      company: newCompany,
+      position: newPosition,
+      phone: newPhone,
+      postcode: newPostcode,
+      address: newAddress,
+      detailAddress: newDetailAddress,
+    } = newUser;
 
     // 회원가입 성공시 Success
     res.status(201).json({
       result: 'success',
-      data: {
+      user: {
         id,
         name: newName,
         email: newEmail,
+        company: newCompany,
+        position: newPosition,
+        phone: newPhone,
+        postcode: newPostcode,
+        address: newAddress,
+        detailAddress: newDetailAddress,
       },
     });
   } catch (err) {
@@ -107,7 +140,7 @@ exports.login = (req, res, next) => {
     if (err || !user) {
       return res
         .status(401)
-        .json({ result: 'fail', message: info?.message || '인증 실패' });
+        .json({ result: 'fail', message: info?.message || '로그인 실패' });
     }
 
     // JWT 토큰 생성
