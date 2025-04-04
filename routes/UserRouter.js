@@ -4,6 +4,8 @@ const {
   getAllUsers,
   getCurrentUser,
   uploadProfileImage,
+  updateUserInfo,
+  checkDuplicateFilename,
 } = require('../controllers/userController');
 const { isAuthenticatedJwt } = require('../middlewares/isAuthenticatedJwt');
 const upload = require('../middlewares/uploadMiddleware');
@@ -23,3 +25,11 @@ userRouter.post(
   upload.single('profileImage'),
   uploadProfileImage
 );
+
+// 파일 중복 확인
+userRouter.get('/check-filename', checkDuplicateFilename);
+
+// 프로필 정보 업데이트
+userRouter.patch('/update', isAuthenticatedJwt, updateUserInfo);
+
+module.exports = userRouter;
