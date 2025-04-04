@@ -8,7 +8,10 @@ const {
   register,
   requestEmailVerification,
   verifyEmailToken,
+  verifyPassword,
 } = require('../controllers/authController');
+
+const { isAuthenticatedJwt } = require('../middlewares/isAuthenticatedJwt');
 
 const authRouter = express.Router();
 const upload = multer(); // multipart/form-data 처리용
@@ -70,5 +73,8 @@ authRouter.post('/login', upload.none(), (req, res, next) => {
     });
   })(req, res, next);
 });
+
+// 비밀번호 검증
+authRouter.post('/verify-password', isAuthenticatedJwt, verifyPassword);
 
 module.exports = authRouter;

@@ -8,6 +8,6 @@ db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
 // 모델들을 한 파일에서 불러와서 등록하는 과정
-db.User = require('./user')(sequelize, Sequelize.DataTypes);
+db.User = require('./User')(sequelize, Sequelize.DataTypes);
 
 module.exports = db;

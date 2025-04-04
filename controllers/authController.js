@@ -145,3 +145,36 @@ exports.login = (req, res, next) => {
     });
   })(req, res, next);
 };
+
+// 로그인된 유저의 비밀번호를 확인하는 API
+exports.verifyPassword = async (req, res) => {
+  const { password } = req.body;
+  const userId = req.user?.id;
+
+  if (!password || !userId) {
+    return res
+      .status(400)
+      .json({ result: 'fail', message: '비밀번호를 입력해주세요.' });
+  }
+
+  try {
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ result: 'fail', message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res
+        .status(401)
+        .json({ result: 'fail', message: '비밀번호가 일치하지 않습니다.' });
+    }
+
+    res.json({ result: 'success' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ result: 'fail', message: '서버 오류' });
+  }
+};
