@@ -1,56 +1,82 @@
-module.exports = (sequelize, DataTypes) => {
-  const User = sequelize.define(
-    'User',
-    {
-      id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-      },
-      email: {
-        type: DataTypes.STRING,
-        unique: true,
-        allowNull: false,
-      },
-      password: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      name: {
-        type: DataTypes.STRING,
-      },
-      company: {
-        type: DataTypes.STRING,
-      },
-      position: {
-        type: DataTypes.STRING,
-      },
-      phone: {
-        type: DataTypes.STRING,
-      },
-      postcode: {
-        type: DataTypes.INTEGER,
-      },
-      address: {
-        type: DataTypes.STRING,
-      },
-      detailAddress: {
-        type: DataTypes.STRING,
-      },
-      isVerified: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
-      profileImage: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-    },
-    {
-      freezeTableName: true, // 테이블명 복수화 방지
-      underscored: true, // camelCase → snake_case로 자동 변환
-    }
-  );
+const { getLogginedUser } = require('../controllers/userController');
+const db = require('../db/query');
 
-  return User;
+const User = {
+  // 이메일로 유저 조회
+  findByEmail: async (email) => {
+    const sql = `SELECT * FROM users WHERE email = ?`;
+    const result = await db.query(sql, [email]);
+    return result[0]; // 단일 유저
+  },
+
+  // ID로 유저 조회
+  findById: async (id) => {
+    const sql = `SELECT * FROM users WHERE id = ?`;
+    const result = await db.query(sql, [id]);
+    return result[0];
+  },
+
+  // 유저 생성
+  create: async (userData) => {
+    const sql = `
+      INSERT INTO users 
+      (email, password, name, company, position, phone, postcode, address, detail_address)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const {
+      email,
+      password,
+      name,
+      company,
+      position,
+      phone,
+      postcode,
+      address,
+      detailAddress,
+    } = userData;
+
+    const result = await db.query(sql, [
+      email,
+      password,
+      name,
+      company,
+      position,
+      phone,
+      postcode,
+      address,
+      detailAddress,
+    ]);
+
+    return result.insertId;
+  },
+
+  // 비밀번호 변경
+  updatePassword: async (userId, hashedPassword) => {
+    const sql = `UPDATE users SET password = ? WHERE id = ?`;
+    const result = await db.query(sql, [hashedPassword, userId]);
+    return result.affectedRows > 0;
+  },
+
+  // 프로필 이미지 변경
+  uploadProfileImage: async (userId, filename) => {
+    const sql = `UPDATE users SET profile_image = ? WHERE id = ?`;
+    const result = await db.query(sql, [filename, userId]);
+    return result.affectedRows > 0;
+  },
+
+  // 전체 유저 조회
+  getAllUsers: async () => {
+    const sql = `SELECT id, name, email, company, position, phone, postcode, address, detail_address, profile_image FROM users`;
+    return await db.query(sql, []);
+  },
+
+  // 회원정보 업데이트
+  updateUserInfo: async (userId, data) => {
+    const sql = `UPDATE users SET ? WHERE id = ?`;
+    const result = await db.query(sql, [data, userId]);
+    return result.affectedRows > 0;
+  },
 };
+
+module.exports = User;

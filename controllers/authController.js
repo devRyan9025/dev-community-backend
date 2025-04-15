@@ -1,23 +1,19 @@
 const bcrypt = require('bcrypt');
-const { User } = require('../models');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const { validationResult } = require('express-validator');
-
 const sendVerificationEmail = require('../utils/sendVerificationEmail');
+const UserModel = require('../models/User');
 
-/* 회원가입 시, 이메일 인증 절차 */
 exports.requestEmailVerification = async (req, res) => {
   const { email } = req.body;
 
   try {
-    // 빈 칸 제출 시
     if (!email) {
       return res.status(400).json({ message: '이메일을 입력해주세요.' });
     }
 
-    // 이미 가입된 이메일 입력 시
-    const exists = await User.findOne({ where: { email } });
+    const exists = await UserModel.findByEmail(email);
     if (exists) {
       return res.status(400).json({ message: '이미 가입된 이메일입니다.' });
     }
@@ -38,33 +34,27 @@ exports.requestEmailVerification = async (req, res) => {
   }
 };
 
-/* 이메일 링크 클릭 → 클라이언트로 리다이렉트 */
 exports.verifyEmailToken = async (req, res) => {
   const { token } = req.body;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_EMAIL_SECRET);
     const email = decoded.email;
-
-    // 토큰이 유효하니, 프론트로 응답
     return res.json({ result: 'success', email });
   } catch (err) {
-    console.log(err.response?.data);
+    console.log(err);
     return res
       .status(400)
       .json({ result: 'fail', message: '유효하지 않은 토큰입니다.' });
   }
 };
 
-// 회원가입 처리 - Register
 exports.register = async (req, res) => {
-  // 유효성 검사 추가 (express-validator 사용)
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({
-      result: 'fail',
-      message: errors.array()[0].msg,
-    });
+    return res
+      .status(400)
+      .json({ result: 'fail', message: errors.array()[0].msg });
   }
 
   const {
@@ -80,8 +70,7 @@ exports.register = async (req, res) => {
   } = req.body;
 
   try {
-    // 중복된 이메일로 가입시 Fail
-    const exists = await User.findOne({ where: { email } });
+    const exists = await UserModel.findByEmail(email);
     if (exists) {
       return res
         .status(400)
@@ -89,8 +78,7 @@ exports.register = async (req, res) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-
-    const newUser = await User.create({
+    const userId = await UserModel.create({
       name,
       email,
       password: hashed,
@@ -103,7 +91,8 @@ exports.register = async (req, res) => {
       isVerified: true,
     });
 
-    // 회원가입 성공시 Success
+    const newUser = await UserModel.findById(userId);
+
     res.status(201).json({
       result: 'success',
       user: {
@@ -115,16 +104,14 @@ exports.register = async (req, res) => {
         phone: newUser.phone,
         postcode: newUser.postcode,
         address: newUser.address,
-        detailAddress: newUser.detailAddress,
+        detailAddress: newUser.detail_address,
       },
     });
   } catch (err) {
-    // 서버 오류시 Fail
     res.status(500).json({ result: 'fail', error: err.message });
   }
 };
 
-// 로그인
 exports.login = (req, res, next) => {
   passport.authenticate('local', { session: false }, (err, user, info) => {
     if (err || !user) {
@@ -133,7 +120,6 @@ exports.login = (req, res, next) => {
         .json({ result: 'fail', message: info?.message || '로그인 실패' });
     }
 
-    // JWT 토큰 생성
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
@@ -142,11 +128,21 @@ exports.login = (req, res, next) => {
       result: 'success',
       message: '로그인 성공',
       token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        company: user.company,
+        position: user.position,
+        phone: user.phone,
+        postcode: user.postcode,
+        address: user.address,
+        detailAddress: user.detail_address,
+      },
     });
   })(req, res, next);
 };
 
-// 로그인된 유저의 비밀번호를 확인하는 API
 exports.verifyPassword = async (req, res) => {
   const { password } = req.body;
   const userId = req.user?.id;
@@ -158,7 +154,7 @@ exports.verifyPassword = async (req, res) => {
   }
 
   try {
-    const user = await User.findByPk(userId);
+    const user = await UserModel.findById(userId);
     if (!user) {
       return res
         .status(404)

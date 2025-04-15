@@ -3,30 +3,29 @@ const LocalStrategy = require('passport-local').Strategy;
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const bcrypt = require('bcrypt');
-const { User } = require('../models');
 
-// Local 전략 설정
+const UserModel = require('../models/User'); // 커스텀 쿼리 기반 모델
+
+// Local 로그인 전략
 passport.use(
   new LocalStrategy(
     {
-      usernameField: 'email', // 폼에서 보낼 필드명
+      usernameField: 'email',
       passwordField: 'password',
     },
     async (email, password, done) => {
       try {
-        const user = await User.findOne({ where: { email } });
-
+        const user = await UserModel.findByEmail(email); // 변경됨
         if (!user) {
           return done(null, false, {
-            message:
-              '등록되지 않은 사용자입니다. 회원 가입 후 서비스를 이용해 주세요!',
+            message: '등록되지 않은 사용자입니다. 회원 가입 후 이용해주세요!',
           });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
           return done(null, false, {
-            message: '잘못된 비밀번호입니다. 확인 후 다시 시도해주세요!',
+            message: '비밀번호가 일치하지 않습니다.',
           });
         }
 
@@ -38,16 +37,18 @@ passport.use(
   )
 );
 
-// JWT 인증 전략
+// JWT 토큰 전략
 passport.use(
   new JwtStrategy(
     {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: process.env.JWT_SECRET, // .env에 저장
+      secretOrKey: process.env.JWT_SECRET,
     },
     async (jwt_payload, done) => {
       try {
-        const user = await User.findByPk(jwt_payload.id);
+        const user = await UserModel.findById(jwt_payload.id);
+        console.log('✅ JWT payload:', jwt_payload);
+        console.log('✅ DB에서 찾은 유저:', user); // 변경됨
         if (user) return done(null, user);
         else return done(null, false);
       } catch (err) {
