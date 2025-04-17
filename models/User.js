@@ -1,4 +1,3 @@
-const { getLogginedUser } = require('../controllers/userController');
 const db = require('../db/query');
 
 const User = {
