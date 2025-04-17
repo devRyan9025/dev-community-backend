@@ -137,7 +137,7 @@ exports.login = (req, res, next) => {
         phone: user.phone,
         postcode: user.postcode,
         address: user.address,
-        detailAddress: user.detail_address,
+        detailAddress: user.detailAddress,
       },
     });
   })(req, res, next);

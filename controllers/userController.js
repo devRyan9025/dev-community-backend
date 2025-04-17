@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const dayjs = require('dayjs');
 const { v4: uuidv4 } = require('uuid');
+const camelToSnake = require('../utils/caseConverter');
 
 // 전체 유저 조회
 exports.getAllUsers = async (req, res) => {
@@ -66,9 +67,9 @@ exports.uploadProfileImage = async (req, res) => {
     const originalPath = path.join('uploads/originalFile', originalName);
     fs.copyFileSync(originalPath, newPath);
 
-    await UserModel.updateProfileImage(userId, `${today}/${newFilename}`); // ✅ 변경
+    await UserModel.uploadProfileImage(userId, `${today}/${newFilename}`);
 
-    res.json({ result: 'success', profileImage: `${today}/${newFilename}` });
+    res.json({ result: 'success', profile_image: `${today}/${newFilename}` });
   } catch (err) {
     console.error(err);
     res.status(500).json({ result: 'fail', message: '프로필 업로드 실패' });
@@ -107,7 +108,6 @@ exports.checkDuplicateFilename = (req, res) => {
 // 회원정보 수정
 exports.updateUserInfo = async (req, res) => {
   const userId = req.user?.id;
-  const { name, company, position, phone, address, detailAddress } = req.body;
 
   if (!userId) {
     return res
@@ -116,15 +116,19 @@ exports.updateUserInfo = async (req, res) => {
   }
 
   try {
-    const updateData = {
+    const { name, company, position, phone, address, detailAddress } = req.body;
+
+    // ✅ camelCase → snake_case 변환
+    const updateData = camelToSnake({
       name,
       company,
       position,
       phone,
       address,
       detailAddress,
-    };
-    const success = await UserModel.updateUserInfo(userId, updateData); // ✅ 변경
+    });
+
+    const success = await UserModel.updateUserInfo(userId, updateData);
 
     if (!success) {
       return res.status(500).json({ result: 'fail', message: '업데이트 실패' });

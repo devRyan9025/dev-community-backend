@@ -29,7 +29,7 @@ userRouter.get(
 // 🔸 프로필 이미지 업로드
 userRouter.post(
   '/:id/upload-profile',
-  upload.single('profileImage'),
+  upload.single('profile_image'),
   uploadProfileImage
 );
 
@@ -38,7 +38,7 @@ userRouter.get('/check-duplicate-filename', checkDuplicateFilename);
 
 // 🔸 회원정보 수정
 userRouter.patch(
-  '/update',
+  '/updateUserInfo',
   passport.authenticate('jwt', { session: false }),
   updateUserInfo
 );
