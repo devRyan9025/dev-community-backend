@@ -3,7 +3,12 @@ const path = require('path');
 const fs = require('fs');
 const dayjs = require('dayjs');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const camelToSnake = require('../utils/caseConverter');
+
+// 파일 내용을 SHA256 해시로 변환
+const getFileHash = (buffer) =>
+  crypto.createHash('sha256').update(buffer).digest('hex');
 
 // 전체 유저 조회
 exports.getAllUsers = async (req, res) => {
@@ -38,15 +43,15 @@ exports.getLogginedUser = async (req, res) => {
   res.status(200).json({ result: 'success', user: user });
 };
 
-// 프로필 이미지 업로드
 exports.uploadProfileImage = async (req, res) => {
   const userId = req.params.id;
   const file = req.file;
 
   if (!file) {
-    return res
-      .status(400)
-      .json({ result: 'fail', message: '파일이 첨부되지 않았습니다.' });
+    return res.status(400).json({
+      result: 'fail',
+      message: '파일이 첨부되지 않았습니다.',
+    });
   }
 
   try {
@@ -57,6 +62,7 @@ exports.uploadProfileImage = async (req, res) => {
     const today = dayjs().format('YYYY-MM-DD');
     const todayDir = path.join('uploads', today);
 
+    // 날짜 디렉토리 생성
     if (!fs.existsSync(todayDir)) {
       fs.mkdirSync(todayDir, { recursive: true });
     }
@@ -64,9 +70,29 @@ exports.uploadProfileImage = async (req, res) => {
     const newFilename = `${Date.now()}_${uuidv4()}${ext}`;
     const newPath = path.join(todayDir, newFilename);
 
-    const originalPath = path.join('uploads/originalFile', originalName);
+    const originalDir = path.join('uploads', 'originalFile');
+    const originalPath = path.join(originalDir, originalName);
+
+    // originalFile 디렉토리 없으면 생성
+    if (!fs.existsSync(originalDir)) {
+      fs.mkdirSync(originalDir, { recursive: true });
+    }
+
+    // 기존 originalFile에 동일한 이름의 파일이 있다면 삭제
+    if (fs.existsSync(originalPath)) {
+      fs.unlinkSync(originalPath);
+    }
+
+    // 업로드된 임시파일 → originalFile 폴더로 복사
+    fs.copyFileSync(file.path, originalPath);
+
+    // originalFile → 날짜 폴더로 저장
     fs.copyFileSync(originalPath, newPath);
 
+    // 임시파일 삭제 (optional)
+    fs.unlinkSync(file.path);
+
+    // DB 반영
     await UserModel.uploadProfileImage(userId, `${today}/${newFilename}`);
 
     res.json({ result: 'success', profile_image: `${today}/${newFilename}` });
@@ -79,29 +105,41 @@ exports.uploadProfileImage = async (req, res) => {
 // 파일 중복 확인
 exports.checkDuplicateFilename = (req, res) => {
   const rawFilename = req.query.filename;
-  if (!rawFilename) {
+  const uploadedHash = req.query.hash;
+
+  if (!rawFilename || !uploadedHash) {
     return res
       .status(400)
-      .json({ result: 'fail', message: '파일명이 필요합니다.' });
+      .json({ result: 'fail', message: '파일명 또는 해시가 누락되었습니다.' });
   }
 
   const filename = decodeURIComponent(rawFilename);
   const originalDir = path.join(__dirname, '../uploads/originalFile');
+  const filePath = path.join(originalDir, filename);
 
   if (!fs.existsSync(originalDir)) {
     fs.mkdirSync(originalDir, { recursive: true });
   }
 
-  const filePath = path.join(originalDir, filename);
-  const exists = fs.existsSync(filePath);
+  // 기존 파일이 없다면 → 바로 ok 리턴
+  if (!fs.existsSync(filePath)) {
+    return res.json({ result: 'ok', message: '사용 가능한 파일입니다.' });
+  }
 
-  if (exists) {
+  // 기존 파일 읽어서 해시 비교
+  const existingBuffer = fs.readFileSync(filePath);
+  const existingHash = getFileHash(existingBuffer);
+
+  if (uploadedHash === existingHash) {
     return res.json({
-      result: 'exist',
-      message: '이미 동일한 이름의 파일이 존재합니다.',
+      result: 'same',
+      message: '동일한 파일이 이미 존재합니다. 업로드할 필요가 없습니다.',
     });
   } else {
-    return res.json({ result: 'ok', message: '사용 가능한 파일입니다.' });
+    return res.json({
+      result: 'exist',
+      message: '동일한 이름의 다른 파일이 존재합니다.',
+    });
   }
 };
 

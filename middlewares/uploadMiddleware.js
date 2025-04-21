@@ -1,27 +1,27 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const dayjs = require('dayjs');
-const { v4: uuidv4 } = require('uuid');
 
-// 저장 경로 및 파일명 설정
+// ✅ 임시 저장 디렉토리
+const tmpDir = 'uploads/tmp';
+
+if (!fs.existsSync(tmpDir)) {
+  fs.mkdirSync(tmpDir, { recursive: true });
+}
+
+// ✅ Multer가 임시 저장소에 파일 저장
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const originalDir = 'uploads/originalFile';
-
-    // originalFile 폴더 없으면 생성
-    if (!fs.existsSync(originalDir)) {
-      fs.mkdirSync(originalDir, { recursive: true });
-    }
-
-    cb(null, originalDir); // 일단 originalFile에 저장
+    cb(null, tmpDir); // ✅ tmp 폴더에 저장
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const safeOriginal = Buffer.from(file.originalname, 'latin1').toString(
       'utf8'
-    ); // 한글 복구
-    cb(null, safeOriginal); // 원본 이름 그대로 저장
+    ); // 한글 복원
+
+    const uniqueName = `${Date.now()}_${safeOriginal}`; // 중복 방지
+    cb(null, uniqueName);
   },
 });
 
