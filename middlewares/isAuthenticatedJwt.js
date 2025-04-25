@@ -9,7 +9,7 @@ exports.isAuthenticatedJwt = (req, res, next) => {
       });
     }
 
-    req.user = user; // ✅ req.user에 저장!
+    req.user = user;
     next();
   })(req, res, next);
 };

@@ -47,8 +47,8 @@ passport.use(
     async (jwt_payload, done) => {
       try {
         const user = await UserModel.findById(jwt_payload.id);
-        console.log('✅ JWT payload:', jwt_payload);
-        console.log('✅ DB에서 찾은 유저:', user); // 변경됨
+        console.log('JWT payload:', jwt_payload);
+        console.log('DB에서 찾은 유저:', user); // 변경됨
         if (user) return done(null, user);
         else return done(null, false);
       } catch (err) {

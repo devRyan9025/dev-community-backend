@@ -5,50 +5,7 @@ const { validationResult } = require('express-validator');
 const sendVerificationEmail = require('../utils/sendVerificationEmail');
 const UserModel = require('../models/User');
 
-exports.requestEmailVerification = async (req, res) => {
-  const { email } = req.body;
-
-  try {
-    if (!email) {
-      return res.status(400).json({ message: '이메일을 입력해주세요.' });
-    }
-
-    const exists = await UserModel.findByEmail(email);
-    if (exists) {
-      return res.status(400).json({ message: '이미 가입된 이메일입니다.' });
-    }
-
-    const token = jwt.sign({ email }, process.env.JWT_EMAIL_SECRET, {
-      expiresIn: '10m',
-    });
-
-    const link = `${
-      process.env.FRONT_URL
-    }/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
-    await sendVerificationEmail(email, link);
-
-    return res.json({ message: '이메일로 인증 링크를 전송했습니다.' });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: '이메일 전송 실패' });
-  }
-};
-
-exports.verifyEmailToken = async (req, res) => {
-  const { token } = req.body;
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_EMAIL_SECRET);
-    const email = decoded.email;
-    return res.json({ result: 'success', email });
-  } catch (err) {
-    console.log(err);
-    return res
-      .status(400)
-      .json({ result: 'fail', message: '유효하지 않은 토큰입니다.' });
-  }
-};
-
+// 회원가입
 exports.register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -112,6 +69,53 @@ exports.register = async (req, res) => {
   }
 };
 
+// 이메일 인증 메일 보내기
+exports.requestEmailVerification = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    if (!email) {
+      return res.status(400).json({ message: '이메일을 입력해주세요.' });
+    }
+
+    const exists = await UserModel.findByEmail(email);
+    if (exists) {
+      return res.status(400).json({ message: '이미 가입된 이메일입니다.' });
+    }
+
+    const token = jwt.sign({ email }, process.env.JWT_EMAIL_SECRET, {
+      expiresIn: '10m',
+    });
+
+    const link = `${
+      process.env.FRONT_URL
+    }/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
+    await sendVerificationEmail(email, link);
+
+    return res.json({ message: '이메일로 인증 링크를 전송했습니다.' });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: '이메일 전송 실패' });
+  }
+};
+
+// 이메일 인증 토큰
+exports.verifyEmailToken = async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_EMAIL_SECRET);
+    const email = decoded.email;
+    return res.json({ result: 'success', email });
+  } catch (err) {
+    console.log(err);
+    return res
+      .status(400)
+      .json({ result: 'fail', message: '유효하지 않은 토큰입니다.' });
+  }
+};
+
+// 로그인
 exports.login = (req, res, next) => {
   passport.authenticate('local', { session: false }, (err, user, info) => {
     if (err || !user) {
@@ -143,6 +147,7 @@ exports.login = (req, res, next) => {
   })(req, res, next);
 };
 
+// 비밀번호 인증
 exports.verifyPassword = async (req, res) => {
   const { password } = req.body;
   const userId = req.user?.id;

@@ -2,17 +2,17 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// ✅ 임시 저장 디렉토리
+// 임시 저장 디렉토리
 const tmpDir = 'uploads/tmp';
 
 if (!fs.existsSync(tmpDir)) {
   fs.mkdirSync(tmpDir, { recursive: true });
 }
 
-// ✅ Multer가 임시 저장소에 파일 저장
+// Multer가 임시 저장소에 파일 저장
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, tmpDir); // ✅ tmp 폴더에 저장
+    cb(null, tmpDir); // tmp 폴더에 저장
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);

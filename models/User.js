@@ -15,6 +15,12 @@ const User = {
     return result[0];
   },
 
+  // 전체 유저 조회
+  getAllUsers: async () => {
+    const sql = `SELECT id, name, email, company, position, phone, postcode, address, detail_address, profile_image FROM users`;
+    return await db.query(sql, []);
+  },
+
   // 유저 생성
   create: async (userData) => {
     const sql = `
@@ -50,13 +56,6 @@ const User = {
     return result.insertId;
   },
 
-  // 비밀번호 변경
-  updatePassword: async (userId, hashedPassword) => {
-    const sql = `UPDATE users SET password = ? WHERE id = ?`;
-    const result = await db.query(sql, [hashedPassword, userId]);
-    return result.affectedRows > 0;
-  },
-
   // 프로필 이미지 변경
   uploadProfileImage: async (userId, filename) => {
     const sql = `UPDATE users SET profile_image = ? WHERE id = ?`;
@@ -64,16 +63,17 @@ const User = {
     return result.affectedRows > 0;
   },
 
-  // 전체 유저 조회
-  getAllUsers: async () => {
-    const sql = `SELECT id, name, email, company, position, phone, postcode, address, detail_address, profile_image FROM users`;
-    return await db.query(sql, []);
-  },
-
   // 회원정보 업데이트
   updateUserInfo: async (userId, data) => {
     const sql = `UPDATE users SET ? WHERE id = ?`;
     const result = await db.query(sql, [data, userId]);
+    return result.affectedRows > 0;
+  },
+
+  // 비밀번호 변경
+  updatePassword: async (userId, hashedPassword) => {
+    const sql = `UPDATE users SET password = ? WHERE id = ?`;
+    const result = await db.query(sql, [hashedPassword, userId]);
     return result.affectedRows > 0;
   },
 };

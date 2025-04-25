@@ -13,7 +13,7 @@ const getFileHash = (buffer) =>
 // 전체 유저 조회
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await UserModel.getAllUsers(); // ✅ 변경
+    const users = await UserModel.getAllUsers();
     if (users.length === 0) {
       return res.status(404).json({
         result: 'fail',
@@ -31,9 +31,9 @@ exports.getAllUsers = async (req, res) => {
 
 // 로그인한 사용자 정보
 exports.getLogginedUser = async (req, res) => {
-  console.log('🔥 JWT에서 추출된 유저 ID:', req.user?.id); // 이거 찍어봐
+  console.log('🔥 JWT에서 추출된 유저 ID:', req.user?.id);
   const userId = req.user?.id;
-  const user = await UserModel.findById(userId); // ✅ 변경
+  const user = await UserModel.findById(userId);
   if (!user) {
     return res.status(404).json({
       result: 'fail',
@@ -43,6 +43,7 @@ exports.getLogginedUser = async (req, res) => {
   res.status(200).json({ result: 'success', user: user });
 };
 
+// 프로필 이미지 업로드
 exports.uploadProfileImage = async (req, res) => {
   const userId = req.params.id;
   const file = req.file;
@@ -156,7 +157,7 @@ exports.updateUserInfo = async (req, res) => {
   try {
     const { name, company, position, phone, address, detailAddress } = req.body;
 
-    // ✅ camelCase → snake_case 변환
+    // camelCase → snake_case 변환
     const updateData = camelToSnake({
       name,
       company,
